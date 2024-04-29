@@ -1,38 +1,37 @@
-
-name: Yugabyte
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '10 3 * * *'
-
 jobs:
   build:
-
-    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
       packages: write
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v3
+    - continue-on-error: true
+      name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: adopt
+        java-version: ${{ matrix.java_version }}
+    - continue-on-error: true
+      env:
+        cache-name: maven-cache
+      name: Maven cache
+      uses: actions/cache@v3
+      with:
+        key: build-${{ env.cache-name }}
+        path: ~/.m2
+    - continue-on-error: true
+      name: yugabyte
+      run: mvn clean test -Dprops.file=testconfig/ebean-yugabyte.properties
     strategy:
       fail-fast: false
       matrix:
-        java_version: [11]
-        os: [ubuntu-latest]
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Java
-      uses: actions/setup-java@v3
-      with:
-        java-version: ${{ matrix.java_version }}
-        distribution: 'adopt'
-    - name: Maven cache
-      uses: actions/cache@v3
-      env:
-        cache-name: maven-cache
-      with:
-        path:
-          ~/.m2
-        key: build-${{ env.cache-name }}
-    - name: yugabyte
-      run: mvn clean test -Dprops.file=testconfig/ebean-yugabyte.properties
+        java_version:
+        - 11
+        os:
+        - ubuntu-latest
+name: Yugabyte
+on:
+  repository_dispatch:
+    types: trigger-ga___yugabyte.yml
